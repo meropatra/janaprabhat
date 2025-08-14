@@ -6,16 +6,21 @@ on:
       - "gallery/**"
   workflow_dispatch:
   schedule:
-    - cron: '15 2 * * *'   # 8:00 AM Kathmandu time
+    # Every 2 hours Kathmandu time
+    # Kathmandu is UTC+5:45, so convert to UTC
+    # Runs at 00:15, 02:15, 04:15, ..., 22:15 UTC → 6:00, 8:00, 10:00, ..., 4:00 Kathmandu
+    - cron: '15 0-22/2 * * *'
 
 jobs:
   update-gallery:
     runs-on: ubuntu-latest
     steps:
+      # 1. Checkout repo without default token
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
+      # 2. Generate gallery.json
       - name: Generate gallery.json
         run: |
           echo "{" > gallery.json
@@ -27,12 +32,15 @@ jobs:
               url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
               echo "    \"$url\"," >> gallery.json
             done
+            # Remove last comma
             sed -i '$ s/,$//' gallery.json
             echo "  ]," >> gallery.json
           done
+          # Remove last comma and close JSON
           sed -i '$ s/,$//' gallery.json
           echo "}" >> gallery.json
 
+      # 3. Commit and push only if changes exist
       - name: Commit and push
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
@@ -40,6 +48,10 @@ jobs:
           git config --global user.name "Biraj Rai"
           git config --global user.email "70630924+birajrai@users.noreply.github.com"
           git add gallery.json
-          git diff-index --quiet HEAD || git commit -m "Auto-update gallery.json"
-          git push https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
-          echo "gallery.json updated and pushed successfully."
+          # Commit only if there are changes
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Auto-update gallery.json"
+            git push https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
+          else
+            echo "No changes detected, skipping commit."
+          fi
