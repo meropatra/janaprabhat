@@ -60,8 +60,8 @@ jobs:
       # Step 3: Commit and push changes
       - name: Commit and push
         run: |
-          git config --global user.name "GitHub Action Bot"
-          git config --global user.email "bot@users.noreply.github.com"
+          git config --global user.name "Biraj Rai"
+          git config --global user.email "70630924+birajrai@users.noreply.github.com"
           git add gallery.json
           git diff-index --quiet HEAD || git commit -m "Auto-update gallery.json"
           git push https://x-access-token:${{ secrets.JP_TOKEN }}@github.com/${{ github.repository }} HEAD:main
