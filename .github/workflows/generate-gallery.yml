@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - "gallery/**"     # Trigger when images are added/removed/changed
-  workflow_dispatch:     # Allow manual trigger
 
 jobs:
   update-gallery:
