@@ -50,7 +50,7 @@ jobs:
           git add gallery.json
           # Commit only if there are changes
           if ! git diff-index --quiet HEAD; then
-            git commit -m "Auto-update gallery.json"
+            git commit -m "update:: new images added gallery.json"
             git push https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
           else
             echo "No changes detected, skipping commit."
