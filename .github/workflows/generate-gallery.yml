@@ -10,44 +10,35 @@ jobs:
   update-gallery:
     runs-on: ubuntu-latest
     steps:
-      # Checkout with credentials disabled
+      # 1. Checkout without default token
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      # Generate gallery.json
+      # 2. Generate gallery.json
       - name: Generate gallery.json
         run: |
           echo "{" > gallery.json
           for year in gallery/*; do
             [ -d "$year" ] || continue
             yname=$(basename "$year")
-            echo "  \"$yname\": {" >> gallery.json
-            for month in "$year"/*; do
-              [ -d "$month" ] || continue
-              mname=$(basename "$month")
-              echo "    \"$mname\": {" >> gallery.json
-              for day in "$month"/*; do
-                [ -d "$day" ] || continue
-                dname=$(basename "$day")
-                echo "      \"$dname\": [" >> gallery.json
-                find "$day" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort | while read file; do
-                  url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
-                  echo "        \"$url\"," >> gallery.json
-                done
-                sed -i '$ s/,$//' gallery.json
-                echo "      ]," >> gallery.json
-              done
-              sed -i '$ s/,$//' gallery.json
-              echo "    }," >> gallery.json
+            echo "  \"$yname\": [" >> gallery.json
+
+            find "$year" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort | while read file; do
+              url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
+              echo "    \"$url\"," >> gallery.json
             done
+
+            # Remove last comma
             sed -i '$ s/,$//' gallery.json
-            echo "  }," >> gallery.json
+            echo "  ]," >> gallery.json
           done
+
+          # Remove last comma and close JSON
           sed -i '$ s/,$//' gallery.json
           echo "}" >> gallery.json
 
-      # Commit and push using PAT
+      # 3. Commit and push using PAT
       - name: Commit and push
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
