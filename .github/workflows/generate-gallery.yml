@@ -1,0 +1,62 @@
+name: Update Gallery JSON
+
+on:
+  push:
+    paths:
+      - "gallery/**"
+  workflow_dispatch:
+
+jobs:
+  update-gallery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate gallery.json
+        run: |
+          echo "{" > gallery.json
+          # Loop through year/month/day folders
+          for year in gallery/*; do
+            [ -d "$year" ] || continue
+            yname=$(basename "$year")
+            echo "  \"$yname\": {" >> gallery.json
+
+            for month in "$year"/*; do
+              [ -d "$month" ] || continue
+              mname=$(basename "$month")
+              echo "    \"$mname\": {" >> gallery.json
+
+              for day in "$month"/*; do
+                [ -d "$day" ] || continue
+                dname=$(basename "$day")
+                echo "      \"$dname\": [" >> gallery.json
+
+                # Loop through images
+                find "$day" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort | while read file; do
+                  url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
+                  echo "        \"$url\"," >> gallery.json
+                done
+
+                # Remove last comma
+                sed -i '$ s/,$//' gallery.json
+                echo "      ]," >> gallery.json
+              done
+
+              sed -i '$ s/,$//' gallery.json
+              echo "    ]," >> gallery.json
+            done
+
+            sed -i '$ s/,$//' gallery.json
+            echo "  }," >> gallery.json
+          done
+
+          sed -i '$ s/,$//' gallery.json
+          echo "}" >> gallery.json
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "bot@users.noreply.github.com"
+          git add gallery.json
+          git diff-index --quiet HEAD || git commit -m "Auto-update gallery.json"
+          git push
