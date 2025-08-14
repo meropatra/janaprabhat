@@ -10,12 +10,13 @@ jobs:
   update-gallery:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout repo
       - uses: actions/checkout@v4
 
+      # Step 2: Generate gallery.json
       - name: Generate gallery.json
         run: |
           echo "{" > gallery.json
-          # Loop through year/month/day folders
           for year in gallery/*; do
             [ -d "$year" ] || continue
             yname=$(basename "$year")
@@ -31,7 +32,7 @@ jobs:
                 dname=$(basename "$day")
                 echo "      \"$dname\": [" >> gallery.json
 
-                # Loop through images
+                # Loop through image files
                 find "$day" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort | while read file; do
                   url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
                   echo "        \"$url\"," >> gallery.json
@@ -42,21 +43,25 @@ jobs:
                 echo "      ]," >> gallery.json
               done
 
+              # Remove trailing comma for month
               sed -i '$ s/,$//' gallery.json
-              echo "    ]," >> gallery.json
+              echo "    }," >> gallery.json
             done
 
+            # Remove trailing comma for year
             sed -i '$ s/,$//' gallery.json
             echo "  }," >> gallery.json
           done
 
+          # Remove last comma
           sed -i '$ s/,$//' gallery.json
           echo "}" >> gallery.json
 
-      - name: Commit changes
+      # Step 3: Commit and push changes
+      - name: Commit and push
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "bot@users.noreply.github.com"
           git add gallery.json
           git diff-index --quiet HEAD || git commit -m "Auto-update gallery.json"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
