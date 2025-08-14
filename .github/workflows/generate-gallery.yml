@@ -5,17 +5,17 @@ on:
     paths:
       - "gallery/**"
   workflow_dispatch:
+  schedule:
+    - cron: '15 2 * * *'   # 8:00 AM Kathmandu time
 
 jobs:
   update-gallery:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout without default token
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      # 2. Generate gallery.json
       - name: Generate gallery.json
         run: |
           echo "{" > gallery.json
@@ -23,22 +23,16 @@ jobs:
             [ -d "$year" ] || continue
             yname=$(basename "$year")
             echo "  \"$yname\": [" >> gallery.json
-
             find "$year" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort | while read file; do
               url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
               echo "    \"$url\"," >> gallery.json
             done
-
-            # Remove last comma
             sed -i '$ s/,$//' gallery.json
             echo "  ]," >> gallery.json
           done
-
-          # Remove last comma and close JSON
           sed -i '$ s/,$//' gallery.json
           echo "}" >> gallery.json
 
-      # 3. Commit and push using PAT
       - name: Commit and push
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
@@ -48,3 +42,4 @@ jobs:
           git add gallery.json
           git diff-index --quiet HEAD || git commit -m "Auto-update gallery.json"
           git push https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
+          echo "gallery.json updated and pushed successfully."
