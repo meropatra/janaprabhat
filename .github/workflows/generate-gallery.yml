@@ -40,7 +40,7 @@ jobs:
           sed -i '$ s/,$//' gallery.json
           echo "}" >> gallery.json
 
-      # 3. Commit and push only if changes exist
+      # 3. Commit and force-push only if changes exist
       - name: Commit and push
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
@@ -48,10 +48,9 @@ jobs:
           git config --global user.name "Biraj Rai"
           git config --global user.email "70630924+birajrai@users.noreply.github.com"
           git add gallery.json
-          # Commit only if there are changes
           if ! git diff-index --quiet HEAD; then
             git commit -m "update:: new images added gallery.json"
-            git push https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
+            git push --force https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
           else
             echo "No changes detected, skipping commit."
           fi
