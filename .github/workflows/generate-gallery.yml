@@ -3,17 +3,19 @@ name: Update Gallery JSON
 on:
   push:
     paths:
-      - "gallery/**"     # Trigger when images are added/removed/changed
-  workflow_dispatch:     # Allow manual trigger
+      - "gallery/**"
+  workflow_dispatch:
 
 jobs:
   update-gallery:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout repository
+      # Checkout with credentials disabled
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      # 2. Generate gallery.json from /gallery/YYYY/MM/DD folders
+      # Generate gallery.json
       - name: Generate gallery.json
         run: |
           echo "{" > gallery.json
@@ -21,46 +23,34 @@ jobs:
             [ -d "$year" ] || continue
             yname=$(basename "$year")
             echo "  \"$yname\": {" >> gallery.json
-
             for month in "$year"/*; do
               [ -d "$month" ] || continue
               mname=$(basename "$month")
               echo "    \"$mname\": {" >> gallery.json
-
               for day in "$month"/*; do
                 [ -d "$day" ] || continue
                 dname=$(basename "$day")
                 echo "      \"$dname\": [" >> gallery.json
-
-                # Loop through image files
                 find "$day" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort | while read file; do
                   url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
                   echo "        \"$url\"," >> gallery.json
                 done
-
-                # Remove last comma
                 sed -i '$ s/,$//' gallery.json
                 echo "      ]," >> gallery.json
               done
-
-              # Remove trailing comma for month
               sed -i '$ s/,$//' gallery.json
               echo "    }," >> gallery.json
             done
-
-            # Remove trailing comma for year
             sed -i '$ s/,$//' gallery.json
             echo "  }," >> gallery.json
           done
-
-          # Remove last comma and close JSON
           sed -i '$ s/,$//' gallery.json
           echo "}" >> gallery.json
 
-      # 3. Commit and push changes using PAT
+      # Commit and push using PAT
       - name: Commit and push
         env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}   # Use the PAT stored in repo secrets
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           git config --global user.name "Biraj Rai"
           git config --global user.email "70630924+birajrai@users.noreply.github.com"
