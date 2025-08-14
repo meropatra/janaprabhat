@@ -64,4 +64,4 @@ jobs:
           git config --global user.email "bot@users.noreply.github.com"
           git add gallery.json
           git diff-index --quiet HEAD || git commit -m "Auto-update gallery.json"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+          git push https://x-access-token:${{ secrets.JP_TOKEN }}@github.com/${{ github.repository }} HEAD:main
