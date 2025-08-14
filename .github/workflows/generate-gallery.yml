@@ -3,17 +3,17 @@ name: Update Gallery JSON
 on:
   push:
     paths:
-      - "gallery/**"
-  workflow_dispatch:
+      - "gallery/**"     # Trigger when images are added/removed/changed
+  workflow_dispatch:     # Allow manual trigger
 
 jobs:
   update-gallery:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout repo
+      # 1. Checkout repository
       - uses: actions/checkout@v4
 
-      # Step 2: Generate gallery.json
+      # 2. Generate gallery.json from /gallery/YYYY/MM/DD folders
       - name: Generate gallery.json
         run: |
           echo "{" > gallery.json
@@ -53,15 +53,17 @@ jobs:
             echo "  }," >> gallery.json
           done
 
-          # Remove last comma
+          # Remove last comma and close JSON
           sed -i '$ s/,$//' gallery.json
           echo "}" >> gallery.json
 
-      # Step 3: Commit and push changes
+      # 3. Commit and push changes using PAT
       - name: Commit and push
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}   # Use the PAT stored in repo secrets
         run: |
           git config --global user.name "Biraj Rai"
           git config --global user.email "70630924+birajrai@users.noreply.github.com"
           git add gallery.json
           git diff-index --quiet HEAD || git commit -m "Auto-update gallery.json"
-          git push https://x-access-token:${{ secrets.JP_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+          git push https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
