@@ -50,7 +50,7 @@ jobs:
           git add gallery.json
           if ! git diff-index --quiet HEAD; then
             git commit -m "update:: new images added gallery.json"
-            git push --force https://$PAT_TOKEN@github.com/meropatra/janaprabhat-gallery.git HEAD:main
+            git push --force https://$PAT_TOKEN@github.com/calyanstudio/janaprabhat-gallery.git HEAD:main
           else
             echo "No changes detected, skipping commit."
           fi
